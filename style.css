@@ -18,6 +18,12 @@
     --border-glow: 0 0 15px rgba(156, 39, 176, 0.3);
 }
 
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: linear-gradient(135deg, #f8f4ff 0%, #f0f4ff 100%);
@@ -85,6 +91,35 @@ body {
     }
 }
 
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(156, 39, 176, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(156, 39, 176, 0.4);
+    }
+}
+
 /* Clases de animación K-Pop */
 .glow-animation {
     animation: glow 2s infinite;
@@ -136,7 +171,7 @@ body {
     left: 0;
     right: 0;
     z-index: 100;
-    height: 70px; /* Un poco más alto */
+    height: 70px;
     animation: slideIn 0.5s ease-out;
     border-bottom: 3px solid rgba(255, 255, 255, 0.2);
 }
@@ -180,58 +215,88 @@ body {
     height: 100%;
     background: linear-gradient(180deg, #ffffff 0%, #f8f4ff 100%);
     box-shadow: 4px 0 20px rgba(156, 39, 176, 0.2);
-    z-index: 1000;
+    z-index: 1001;
     display: flex;
     flex-direction: column;
     transform: translateX(-100%);
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
     border-right: 3px solid var(--primary-light);
+    padding-top: 70px;
 }
 
 .sidebar.open {
     transform: translateX(0);
 }
 
-.sidebar-header {
-    background: var(--gradient-primary);
-    color: var(--white);
-    padding: 1.2rem 1.5rem;
+.close-menu-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    flex-shrink: 0;
-    height: 70px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 12px rgba(156, 39, 176, 0.2);
+    justify-content: center;
+    transition: all 0.3s;
 }
 
-.sidebar-header h2 {
-    font-size: 1.2rem;
-    font-weight: 700;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+.close-menu-btn:hover {
+    background: rgba(156, 39, 176, 0.1);
+    transform: rotate(90deg);
 }
 
-/* Menu Items K-Pop */
-.menu-item {
+.sidebar h2 {
+    padding: 1.5rem 1.5rem 0.5rem;
+    color: var(--primary-color);
+    font-size: 1.5rem;
+}
+
+.menu-section {
+    padding: 1.5rem;
+}
+
+.menu-section h3 {
+    color: var(--secondary-color);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    border-bottom: 2px solid var(--primary-light);
+    padding-bottom: 0.5rem;
+}
+
+.menu-list {
+    list-style: none;
+}
+
+.menu-list li {
+    margin-bottom: 0.5rem;
+}
+
+.menu-list button {
     width: 100%;
-    padding: 1rem 1.5rem;
+    padding: 1rem;
     border: none;
     background: transparent;
     text-align: left;
-    font-size: 0.95rem;
+    font-size: 1rem;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     color: #5a4b81;
     display: flex;
     align-items: center;
     gap: 1rem;
-    border-bottom: 1px solid rgba(156, 39, 176, 0.1);
+    border-radius: 8px;
     position: relative;
     overflow: hidden;
 }
 
-.menu-item::before {
+.menu-list button::before {
     content: '';
     position: absolute;
     left: 0;
@@ -243,48 +308,66 @@ body {
     transition: transform 0.3s;
 }
 
-.menu-item:hover {
+.menu-list button:hover {
     background: linear-gradient(90deg, rgba(156, 39, 176, 0.05) 0%, rgba(240, 98, 146, 0.05) 100%);
     padding-left: 2rem;
     color: var(--primary-color);
 }
 
-.menu-item:hover::before {
+.menu-list button:hover::before {
     transform: translateX(0);
 }
 
-.menu-item i {
-    font-size: 1.1rem;
-    width: 24px;
-    text-align: center;
-    color: var(--primary-color);
+/* Overlay */
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    backdrop-filter: blur(3px);
 }
 
-/* Main Content */
-.main-content {
+.overlay.active {
+    display: block;
+    animation: fadeIn 0.3s;
+}
+
+/* Main Container */
+.container {
     margin-top: 70px;
-    padding: 1.5rem;
     min-height: calc(100vh - 70px);
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow-y: auto;
-    height: calc(100vh - 70px);
     background: var(--light-bg);
 }
 
-/* Welcome Screen K-Pop */
-.welcome-screen {
-    text-align: center;
-    padding: 3rem 1rem;
-    max-width: 600px;
-    margin: 0 auto;
-    animation: fadeIn 1s ease-out;
-    background: white;
-    border-radius: 20px;
-    box-shadow: var(--shadow-card);
-    border: 1px solid rgba(156, 39, 176, 0.1);
+.content {
+    padding: 1.5rem;
+    min-height: calc(100vh - 70px);
 }
 
-.welcome-screen h2 {
+.view {
+    display: none;
+    animation: fadeIn 0.5s;
+}
+
+.view.active {
+    display: block;
+}
+
+/* Welcome Card */
+.welcome-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: var(--shadow-card);
+    border: 1px solid rgba(156, 39, 176, 0.1);
+    animation: slideIn 0.5s ease-out;
+}
+
+.welcome-card h2 {
     background: var(--gradient-primary);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -292,43 +375,90 @@ body {
     margin-bottom: 1.5rem;
     font-size: 2rem;
     font-weight: 800;
-    animation: slideIn 0.8s ease-out;
+}
+
+.welcome-card p {
+    color: #5a4b81;
+    margin-bottom: 1.5rem;
+    line-height: 1.8;
+}
+
+.instructions {
+    background: linear-gradient(135deg, rgba(156, 39, 176, 0.05) 0%, rgba(240, 98, 146, 0.05) 100%);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin: 2rem 0;
+    border-left: 5px solid var(--secondary-color);
+}
+
+.instructions h3 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.instructions ul {
+    list-style: none;
+    padding-left: 1rem;
+}
+
+.instructions li {
+    margin-bottom: 0.8rem;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.instructions li::before {
+    content: '✨';
+    position: absolute;
+    left: 0;
 }
 
 .hint {
     background: linear-gradient(135deg, rgba(156, 39, 176, 0.1) 0%, rgba(240, 98, 146, 0.1) 100%);
     padding: 1.2rem;
     border-radius: 12px;
-    margin-top: 2.5rem !important;
+    margin-top: 2rem !important;
     border-left: 5px solid var(--secondary-color);
     animation: pulse 2s infinite;
     color: #5a4b81;
+    text-align: center;
 }
 
-/* Botones K-Pop */
-.tutorial-btn, .save-btn, .add-member-btn, .add-event-btn {
+/* Section Header */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--primary-light);
+}
+
+.section-header h2 {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.add-btn-small {
     background: var(--gradient-primary);
     color: white;
     border: none;
-    padding: 1rem 2rem;
-    border-radius: 12px;
+    padding: 0.8rem 1.5rem;
+    border-radius: 10px;
     cursor: pointer;
-    font-size: 1rem;
     font-weight: 600;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 15px rgba(156, 39, 176, 0.3);
-    position: relative;
-    overflow: hidden;
 }
 
-.tutorial-btn:hover, .save-btn:hover, .add-member-btn:hover, .add-event-btn:hover {
+.add-btn-small:hover {
     transform: translateY(-3px) scale(1.05);
     box-shadow: 0 6px 25px rgba(156, 39, 176, 0.4);
     background: var(--gradient-secondary);
-}
-
-.tutorial-btn:active, .save-btn:active, .add-member-btn:active, .add-event-btn:active {
-    transform: translateY(0) scale(0.98);
 }
 
 /* Event Cards K-Pop */
@@ -343,6 +473,7 @@ body {
     position: relative;
     overflow: hidden;
     box-shadow: var(--shadow-card);
+    animation: slideIn 0.5s ease-out;
 }
 
 .event-card::before {
@@ -370,6 +501,24 @@ body {
     transform-origin: bottom;
 }
 
+.event-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+}
+
+.event-card .date {
+    color: var(--gray-dark);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.event-card .asistentes {
+    color: var(--secondary-color);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
 /* Member Cards K-Pop */
 .member-card {
     background: white;
@@ -379,6 +528,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 1rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     animation: slideIn 0.5s ease-out;
     box-shadow: var(--shadow-card);
@@ -392,23 +542,214 @@ body {
     border-color: var(--primary-light);
 }
 
-.member-card::after {
-    content: '';
-    position: absolute;
-    right: -20px;
-    top: 50%;
-    transform: translateY(-50%);
+.member-card .member-info h3 {
+    color: var(--primary-color);
+    margin-bottom: 0.3rem;
+    font-size: 1.1rem;
+}
+
+.member-card .member-info .email {
+    color: var(--gray-dark);
+    font-size: 0.9rem;
+}
+
+.member-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.member-actions button {
+    background: rgba(156, 39, 176, 0.1);
+    border: 2px solid rgba(156, 39, 176, 0.2);
+    color: var(--primary-color);
+    cursor: pointer;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    transition: all 0.3s;
+    font-size: 0.9rem;
+}
+
+.member-actions button:hover {
+    background: var(--gradient-primary);
+    color: white;
+    border-color: transparent;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1002;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    animation: fadeIn 0.3s;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 20px 40px rgba(156, 39, 176, 0.2);
+    border: 2px solid var(--primary-light);
+}
+
+.modal-header {
+    background: var(--gradient-primary);
+    color: var(--white);
+    padding: 1.5rem;
+    border-radius: 18px 18px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(156, 39, 176, 0.2);
+}
+
+.modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.close-modal-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
     width: 40px;
     height: 40px;
-    background: var(--gradient-primary);
     border-radius: 50%;
-    opacity: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: all 0.3s;
 }
 
-.member-card:hover::after {
-    opacity: 0.1;
-    right: -10px;
+.close-modal-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.form-group {
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(156, 39, 176, 0.1);
+}
+
+.form-group:last-of-type {
+    border-bottom: none;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.form-group input[type="text"],
+.form-group input[type="date"],
+.form-group input[type="email"] {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid rgba(156, 39, 176, 0.2);
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: rgba(156, 39, 176, 0.02);
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(156, 39, 176, 0.15);
+    background: white;
+}
+
+#asistentesList {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 1rem;
+    background: rgba(156, 39, 176, 0.02);
+    border-radius: 10px;
+    border: 2px solid rgba(156, 39, 176, 0.1);
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem;
+    border-radius: 8px;
+    transition: all 0.3s;
+    margin-bottom: 0.5rem;
+    border: 2px solid transparent;
+}
+
+.checkbox-item:hover {
+    background: linear-gradient(90deg, rgba(156, 39, 176, 0.05) 0%, rgba(240, 98, 146, 0.05) 100%);
+    transform: translateX(8px);
+    border-color: var(--primary-light);
+}
+
+.checkbox-item label {
+    flex: 1;
+    cursor: pointer;
+    margin: 0;
+    font-weight: normal;
+    color: #333;
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    accent-color: var(--primary-color);
+}
+
+.checkbox-item input[type="checkbox"]:checked {
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(156, 39, 176, 0.5);
+}
+
+.form-actions {
+    padding: 1.5rem;
+    text-align: right;
+}
+
+.btn-save {
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(156, 39, 176, 0.3);
+}
+
+.btn-save:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 25px rgba(156, 39, 176, 0.4);
+    background: var(--gradient-secondary);
 }
 
 /* Year & Month Headers */
@@ -453,144 +794,6 @@ body {
     border-color: var(--primary-light);
 }
 
-/* Modal K-Pop */
-.modal {
-    background: white;
-    border-radius: 20px;
-    width: 90%;
-    max-width: 500px;
-    max-height: 90vh;
-    overflow-y: auto;
-    animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 20px 40px rgba(156, 39, 176, 0.2);
-    border: 2px solid var(--primary-light);
-}
-
-.modal-header {
-    background: var(--gradient-primary);
-    color: var(--white);
-    padding: 1.5rem;
-    border-radius: 18px 18px 0 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 4px 12px rgba(156, 39, 176, 0.2);
-}
-
-/* Input Fields K-Pop */
-.input-field {
-    width: 100%;
-    padding: 1rem;
-    margin-bottom: 1.2rem;
-    border: 2px solid rgba(156, 39, 176, 0.2);
-    border-radius: 10px;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-    background: rgba(156, 39, 176, 0.02);
-}
-
-.input-field:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(156, 39, 176, 0.15);
-    background: white;
-}
-
-/* Checkbox K-Pop */
-.checkbox-item {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    padding: 0.8rem;
-    border-radius: 8px;
-    transition: all 0.3s;
-    margin-bottom: 0.5rem;
-    border: 2px solid transparent;
-}
-
-.checkbox-item:hover {
-    background: linear-gradient(90deg, rgba(156, 39, 176, 0.05) 0%, rgba(240, 98, 146, 0.05) 100%);
-    transform: translateX(8px);
-    border-color: var(--primary-light);
-}
-
-.checkbox-item input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    transition: all 0.3s;
-    accent-color: var(--primary-color);
-}
-
-.checkbox-item input[type="checkbox"]:checked {
-    transform: scale(1.2);
-    box-shadow: 0 0 10px rgba(156, 39, 176, 0.5);
-}
-
-/* Tutorial Card K-Pop */
-.tutorial-card {
-    background: linear-gradient(135deg, #ffffff, #f8f4ff);
-    border-radius: 25px;
-    width: 90%;
-    max-width: 500px;
-    padding: 2.5rem;
-    box-shadow: 0 25px 50px rgba(156, 39, 176, 0.3);
-    animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-    border: 2px solid var(--primary-light);
-}
-
-.tutorial-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 6px;
-    background: var(--gradient-primary);
-}
-
-.tutorial-content .emoji {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    animation: kpopBounce 1s infinite;
-    display: block;
-    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
-}
-
-/* Stats Cards */
-.stat-card {
-    background: white;
-    border: 2px solid transparent;
-    border-radius: 15px;
-    padding: 1.5rem;
-    transition: all 0.3s ease;
-    animation: slideIn 0.5s ease-out;
-    box-shadow: var(--shadow-card);
-    position: relative;
-    overflow: hidden;
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-hover);
-    border-color: var(--primary-light);
-}
-
-.stat-header {
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 1.2rem;
-    padding-bottom: 0.8rem;
-    border-bottom: 2px solid rgba(156, 39, 176, 0.1);
-    font-weight: 700;
-    font-size: 1.2rem;
-}
-
 /* Delete Button */
 .delete-btn {
     background: linear-gradient(135deg, #ff4081, #f50057);
@@ -607,56 +810,6 @@ body {
     background: linear-gradient(135deg, #f50057, #c51162);
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(245, 0, 87, 0.3);
-}
-
-/* Botones de acción */
-.edit-event-btn, .member-actions button {
-    background: rgba(156, 39, 176, 0.1);
-    border: 2px solid rgba(156, 39, 176, 0.2);
-    color: var(--primary-color);
-    cursor: pointer;
-    padding: 0.4rem 0.8rem;
-    border-radius: 8px;
-    transition: all 0.3s;
-}
-
-.edit-event-btn:hover, .member-actions button:hover {
-    background: var(--gradient-primary);
-    color: white;
-    border-color: transparent;
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
-}
-
-/* Badges K-Pop */
-.role-badge {
-    display: inline-block;
-    padding: 0.3rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.role-leader {
-    background: linear-gradient(135deg, #9c27b0, #7b1fa2);
-    color: white;
-}
-
-.role-vocal {
-    background: linear-gradient(135deg, #f06292, #ec407a);
-    color: white;
-}
-
-.role-dancer {
-    background: linear-gradient(135deg, #2196f3, #1976d2);
-    color: white;
-}
-
-.role-rapper {
-    background: linear-gradient(135deg, #ff9800, #f57c00);
-    color: white;
 }
 
 /* Scrollbar personalizado */
@@ -688,17 +841,27 @@ body {
         font-size: 1.1rem;
     }
     
-    .main-content {
+    .container {
         margin-top: 65px;
+    }
+    
+    .content {
         padding: 1rem;
     }
     
-    .welcome-screen h2 {
+    .welcome-card {
+        padding: 1.8rem;
+    }
+    
+    .welcome-card h2 {
         font-size: 1.6rem;
     }
     
-    .tutorial-card {
-        padding: 1.8rem;
+    .section-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .modal-content {
         width: 95%;
     }
 }
@@ -709,47 +872,22 @@ body {
         max-width: 280px;
     }
     
-    .sidebar.open ~ .main-content {
-        transform: translateX(85%);
-    }
-    
-    .event-card, .member-card, .stat-card {
+    .event-card, .member-card {
         padding: 1rem;
     }
     
-    .modal {
-        width: 95%;
-        margin: 0.5rem;
-    }
-    
-    .tutorial-btn, .save-btn, .add-member-btn {
+    .btn-save, .add-btn-small {
         padding: 0.8rem 1.5rem;
         font-size: 0.95rem;
     }
-}
-
-/* Efectos de luz K-Pop */
-.light-effect {
-    position: fixed;
-    width: 200px;
-    height: 200px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(156, 39, 176, 0.15), transparent 70%);
-    pointer-events: none;
-    z-index: -1;
-}
-
-/* Decoración de estrellas */
-.star {
-    position: absolute;
-    background: var(--white);
-    border-radius: 50%;
-    animation: sparkleStar 2s infinite;
-}
-
-/* Estilos para iconos */
-i.fas {
-    font-size: 1.1em;
+    
+    .form-group {
+        padding: 1rem;
+    }
+    
+    .modal-header {
+        padding: 1rem;
+    }
 }
 
 /* Texto con gradiente */
@@ -759,4 +897,45 @@ i.fas {
     -webkit-text-fill-color: transparent;
     background-clip: text;
     font-weight: 700;
+}
+
+/* Estilos para detalles del evento */
+.event-details {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: var(--shadow-card);
+    animation: slideIn 0.5s ease-out;
+}
+
+.event-details h2 {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.event-details .event-info {
+    margin-bottom: 2rem;
+}
+
+.event-details .info-item {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: rgba(156, 39, 176, 0.05);
+    border-radius: 10px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.event-details .info-item h3 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.event-details .info-item p {
+    color: #5a4b81;
 }
