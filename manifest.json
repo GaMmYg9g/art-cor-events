@@ -1,0 +1,24 @@
+{
+  "name": "ArtCor",
+  "short_name": "ArtCor",
+  "description": "Aplicación para gestionar eventos e integrantes del proyecto",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#d32f2f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "lang": "es"
+}
