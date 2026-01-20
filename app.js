@@ -653,15 +653,241 @@ window.showView = function(view) {
                                                      view.id === 'detalleEventoView' ? 'Detalle del Evento' : 'Gestor de Eventos K-Pop';
 };
 
+// ==============================================
+// SERVICE WORKER Y PWA FUNCTIONS - ACTUALIZADAS
+// ==============================================
+
 // Registrar Service Worker para PWA
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(registration => {
-                console.log('Service Worker registrado con éxito:', registration.scope);
+    window.addEventListener('load', function() {
+        console.log('🔄 Intentando registrar Service Worker...');
+        
+        navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+                console.log('✅ Service Worker registrado con éxito!');
+                console.log('📌 Scope:', registration.scope);
+                
+                // Verificar si hay una nueva versión del Service Worker
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    console.log('🔄 Nueva versión del Service Worker encontrada:', newWorker);
+                    
+                    newWorker.addEventListener('statechange', () => {
+                        console.log('📊 Estado del nuevo Service Worker:', newWorker.state);
+                        
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log('📱 Nueva versión disponible. Recarga para actualizar.');
+                            
+                            // Mostrar notificación al usuario
+                            if (confirm('¡Nueva versión disponible! ¿Quieres actualizar la aplicación?')) {
+                                window.location.reload();
+                            }
+                        }
+                    });
+                });
+                
+                // Verificar el estado actual
+                if (registration.active) {
+                    console.log('✅ Service Worker activo y listo');
+                }
+                if (registration.waiting) {
+                    console.log('⏳ Service Worker esperando para activarse');
+                }
+                if (registration.installing) {
+                    console.log('🔄 Service Worker instalándose...');
+                }
             })
-            .catch(error => {
-                console.log('Error al registrar el Service Worker:', error);
+            .catch(function(error) {
+                console.log('❌ Error al registrar el Service Worker:', error);
+                console.log('Detalles del error:', error.message);
+                console.log('Stack trace:', error.stack);
             });
     });
+} else {
+    console.log('❌ Service Worker no soportado en este navegador');
+}
+
+// Detectar si la app está instalada
+window.addEventListener('beforeinstallprompt', (event) => {
+    console.log('✅ beforeinstallprompt disparado - La app puede ser instalada');
+    
+    // Previene que el navegador muestre el prompt automáticamente
+    event.preventDefault();
+    
+    // Guarda el evento para poder mostrarlo más tarde
+    window.deferredPrompt = event;
+    
+    // Mostrar botón de instalación (opcional)
+    mostrarBotonInstalacion();
+    
+    // Log adicional
+    console.log('📱 Platform:', event.platforms);
+    console.log('👤 User:', event.userChoice);
+});
+
+window.addEventListener('appinstalled', (event) => {
+    console.log('🎉 ¡Aplicación instalada exitosamente!');
+    console.log('Evento de instalación:', event);
+    
+    // Limpiar el prompt guardado
+    window.deferredPrompt = null;
+    
+    // Ocultar el botón de instalación si existe
+    ocultarBotonInstalacion();
+});
+
+// Función para mostrar el prompt de instalación
+function mostrarPromptInstalacion() {
+    if (window.deferredPrompt) {
+        console.log('🔄 Mostrando prompt de instalación...');
+        
+        window.deferredPrompt.prompt();
+        
+        window.deferredPrompt.userChoice.then((choiceResult) => {
+            console.log('👤 Elección del usuario:', choiceResult);
+            
+            if (choiceResult.outcome === 'accepted') {
+                console.log('✅ Usuario aceptó instalar la PWA');
+            } else {
+                console.log('❌ Usuario rechazó instalar la PWA');
+            }
+            
+            window.deferredPrompt = null;
+        });
+    } else {
+        console.log('ℹ️ No hay prompt de instalación disponible');
+    }
+}
+
+// Función para mostrar botón de instalación
+function mostrarBotonInstalacion() {
+    // Crear botón si no existe
+    let installButton = document.getElementById('installButton');
+    
+    if (!installButton) {
+        installButton = document.createElement('button');
+        installButton.id = 'installButton';
+        installButton.innerHTML = '📱 Instalar App';
+        installButton.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #FF2D78 0%, #9D4BFF 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 45, 120, 0.3);
+            z-index: 1000;
+            font-size: 14px;
+        `;
+        installButton.addEventListener('click', mostrarPromptInstalacion);
+        document.body.appendChild(installButton);
+        
+        console.log('🔼 Botón de instalación creado');
+    }
+}
+
+// Función para ocultar botón de instalación
+function ocultarBotonInstalacion() {
+    const installButton = document.getElementById('installButton');
+    if (installButton) {
+        installButton.style.display = 'none';
+        console.log('🔽 Botón de instalación ocultado');
+    }
+}
+
+// Detectar si la app se está ejecutando en modo standalone (PWA instalada)
+function detectarModoPWA() {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    
+    if (isStandalone) {
+        console.log('📱 Ejecutando como PWA instalada (modo standalone)');
+        return true;
+    } else if (window.navigator.standalone) {
+        console.log('📱 Ejecutando como PWA instalada (iOS)');
+        return true;
+    } else {
+        console.log('🌐 Ejecutando en navegador web');
+        return false;
+    }
+}
+
+// Verificar el modo al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔍 Verificando modo de ejecución...');
+    detectarModoPWA();
+    
+    // Verificar si estamos en línea
+    console.log('🌐 Estado de conexión:', navigator.onLine ? 'En línea' : 'Sin conexión');
+    
+    // Escuchar cambios en la conexión
+    window.addEventListener('online', () => {
+        console.log('✅ Conectado a internet');
+    });
+    
+    window.addEventListener('offline', () => {
+        console.log('❌ Sin conexión a internet');
+    });
+});
+
+// Script de verificación PWA (solo en desarrollo)
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('=== VERIFICACIÓN PWA (Modo Desarrollo) ===');
+    console.log('📋 URL:', window.location.href);
+    console.log('🔧 Service Worker soportado:', 'serviceWorker' in navigator ? '✅ SÍ' : '❌ NO');
+    
+    // Verificar manifest
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    if (manifestLink) {
+        console.log('📄 Manifest encontrado:', manifestLink.href);
+        
+        fetch(manifestLink.href)
+            .then(response => {
+                console.log('📊 Estado del manifest:', response.status, response.statusText);
+                return response.json();
+            })
+            .then(manifest => {
+                console.log('✅ Manifest cargado correctamente');
+                console.log('📝 Nombre de la app:', manifest.name);
+                console.log('🎨 Color del tema:', manifest.theme_color);
+                console.log('🖼️ Número de iconos:', manifest.icons ? manifest.icons.length : 0);
+                
+                // Verificar cada icono
+                if (manifest.icons && manifest.icons.length > 0) {
+                    manifest.icons.forEach((icon, index) => {
+                        console.log(`🖼️ Icono ${index + 1}:`, icon.src, `(${icon.sizes})`);
+                        
+                        // Verificar si el icono se puede cargar
+                        const img = new Image();
+                        img.src = icon.src;
+                        img.onload = () => console.log(`   ✅ Icono cargado: ${icon.src}`);
+                        img.onerror = () => console.log(`   ❌ Error cargando icono: ${icon.src}`);
+                    });
+                }
+            })
+            .catch(error => {
+                console.log('❌ Error cargando manifest:', error.message);
+            });
+    } else {
+        console.log('❌ No se encontró manifest');
+    }
+    
+    // Verificar service worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations()
+            .then(registrations => {
+                console.log('🔍 Número de Service Workers registrados:', registrations.length);
+                
+                registrations.forEach((registration, index) => {
+                    console.log(`📋 Service Worker ${index + 1}:`, registration.scope);
+                    console.log(`   Estado:`, registration.active ? 'Activo' : 'Inactivo');
+                });
+            })
+            .catch(error => {
+                console.log('❌ Error obteniendo registros de Service Worker:', error);
+            });
+    }
 }
