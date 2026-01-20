@@ -1,68 +1,95 @@
-const CACHE_NAME = 'eventos-app-v1.0';
+const CACHE_NAME = 'event-manager-kpop-v2';
 const urlsToCache = [
-  '/',
-  './index.html',
-  './styles.css',
-  './app.js',
-  './manifest.json',
-  './icon-192x192.png',
-  './icon-512x512.png'
+    './',
+    './index.html',
+    './styles.css',
+    './app.js',
+    './manifest.json',
+    './icon-32x32.png',
+    './icon-192x192.png',
+    './icon-512x512.png',
+    './favicon.ico'
 ];
 
-// Instalar Service Worker y cachear recursos
+// Install Service Worker
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(urlsToCache);
-      })
-  );
+    console.log('Service Worker: Instalando...');
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => {
+                console.log('Service Worker: Cacheando archivos');
+                return cache.addAll(urlsToCache);
+            })
+            .then(() => self.skipWaiting())
+    );
 });
 
-// Activar Service Worker y eliminar cachés antiguos
+// Activate Service Worker
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
+    console.log('Service Worker: Activando...');
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cache => {
+                    if (cache !== CACHE_NAME) {
+                        console.log('Service Worker: Limpiando cache viejo');
+                        return caches.delete(cache);
+                    }
+                })
+            );
         })
-      );
-    })
-  );
+    );
+    return self.clients.claim();
 });
 
-// Estrategia: Cache First, luego red
+// Fetch Strategy: Cache First, fallback a Network
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Devuelve el recurso desde caché si está disponible
-        if (response) {
-          return response;
-        }
-        
-        // Si no está en caché, haz la solicitud a la red
-        return fetch(event.request).then(
-          response => {
-            // Verifica si la respuesta es válida
-            if(!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-            
-            // Clona la respuesta para guardarla en caché y devolverla
-            const responseToCache = response.clone();
-            
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-              
-            return response;
-          }
-        );
-      })
-  );
+    // No cachear solicitudes a la API o recursos dinámicos
+    if (event.request.url.includes('/api/') || 
+        event.request.method !== 'GET') {
+        return fetch(event.request);
+    }
+    
+    event.respondWith(
+        caches.match(event.request)
+            .then(response => {
+                // Si está en cache, devolverlo
+                if (response) {
+                    return response;
+                }
+                
+                // Si no está en cache, hacer fetch
+                return fetch(event.request)
+                    .then(fetchResponse => {
+                        // Verificar si la respuesta es válida
+                        if (!fetchResponse || fetchResponse.status !== 200 || 
+                            fetchResponse.type !== 'basic') {
+                            return fetchResponse;
+                        }
+                        
+                        // Clonar la respuesta
+                        const responseToCache = fetchResponse.clone();
+                        
+                        // Agregar al cache
+                        caches.open(CACHE_NAME)
+                            .then(cache => {
+                                cache.put(event.request, responseToCache);
+                            });
+                        
+                        return fetchResponse;
+                    })
+                    .catch(error => {
+                        console.log('Fetch failed; returning offline page:', error);
+                        // Puedes devolver una página offline personalizada aquí
+                        return caches.match('./index.html');
+                    });
+            })
+    );
+});
+
+// Manejar mensajes del cliente
+self.addEventListener('message', event => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
