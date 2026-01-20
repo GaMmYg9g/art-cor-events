@@ -2,29 +2,27 @@
     "name": "Gestor de Eventos K-Pop",
     "short_name": "Eventos K-Pop",
     "description": "Aplicación para gestionar eventos y control de asistencia con estilo K-Pop",
-    "start_url": "./index.html",
+    "start_url": "/",
+    "scope": "/",
     "display": "standalone",
     "background_color": "#F8F0FF",
     "theme_color": "#FF2D78",
     "orientation": "portrait",
     "icons": [
         {
-            "src": "./icon-32x32.png",
+            "src": "/icon-32x32.png",
             "sizes": "32x32",
-            "type": "image/png",
-            "purpose": "any maskable"
+            "type": "image/png"
         },
         {
-            "src": "./icon-192x192.png",
+            "src": "/icon-192x192.png",
             "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "any maskable"
+            "type": "image/png"
         },
         {
-            "src": "./icon-512x512.png",
+            "src": "/icon-512x512.png",
             "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "any maskable"
+            "type": "image/png"
         }
     ],
     "categories": ["productivity", "utilities"],
