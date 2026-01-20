@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArtCore Events PWA</title>
+    <meta name="theme-color" content="#dc2626">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="icon.png">
+</head>
+<body>
+    <!-- Menú lateral -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>ArtCor Events</h2>
+            <button class="close-menu" id="closeMenu">✕</button>
+        </div>
+        <ul class="menu-list">
+            <li><button id="menuHome" class="menu-item">🏠 Inicio</button></li>
+            <li><button id="menuEvents" class="menu-item">📅 Eventos</button></li>
+            <li><button id="menuMembers" class="menu-item">👥 Integrantes</button></li>
+            <li><button id="menuAttendance" class="menu-item">📊 Asistencia</button></li>
+        </ul>
+    </nav>
+
+    <!-- Header -->
+    <header class="header">
+        <button class="menu-btn animated-btn" id="menuBtn">☰</button>
+        <h1>ArtCor Events</h1>
+        <button class="add-btn animated-btn" id="addBtn">+</button>
+    </header>
+
+    <!-- Contenido principal -->
+    <main class="main-content" id="mainContent">
+        <div class="welcome-screen" id="welcomeScreen">
+            <h2>Bienvenido a ArtCor Events</h2>
+            <p>Esta aplicación te ayuda a gestionar eventos y llevar el control de asistencia de los integrantes de tu proyecto.</p>
+            <p class="hint">Toca + para crear un nuevo evento</p>
+            
+            <!-- Botón para iniciar tutorial -->
+            <button class="tutorial-btn pulse-animation" id="startTutorial">
+                🎮 Iniciar Tutorial
+            </button>
+        </div>
+
+        <!-- Sección de eventos -->
+        <div class="events-section hidden" id="eventsSection">
+            <div class="timeline" id="timeline"></div>
+        </div>
+
+        <!-- Sección de integrantes -->
+        <div class="members-section hidden" id="membersSection">
+            <h2>Integrantes del Proyecto</h2>
+            <div class="members-list" id="membersList"></div>
+            <button class="add-member-btn animated-btn" id="addMemberBtn">Agregar Integrante</button>
+        </div>
+
+        <!-- Sección de asistencia -->
+        <div class="attendance-section hidden" id="attendanceSection">
+            <h2>Estadísticas de Asistencia</h2>
+            <div class="stats-filters">
+                <select id="periodFilter" class="animated-select">
+                    <option value="all">General</option>
+                    <option value="year">Por Año</option>
+                    <option value="month">Por Mes</option>
+                </select>
+                <select id="yearFilter" class="hidden animated-select"></select>
+                <select id="monthFilter" class="hidden animated-select"></select>
+            </div>
+            <div class="stats-container" id="statsContainer"></div>
+        </div>
+    </main>
+
+    <!-- Modal para crear/editar evento -->
+    <div class="modal-overlay hidden" id="eventModalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Nuevo Evento</h3>
+                <button class="close-modal animated-btn" id="closeEventModal">✕</button>
+            </div>
+            <div class="modal-content">
+                <input type="text" id="eventName" placeholder="Nombre del evento" class="input-field animated-input">
+                <input type="date" id="eventDate" class="input-field animated-input">
+                <div class="members-checkbox">
+                    <h4>Asistencia:</h4>
+                    <div id="attendanceCheckboxes"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="save-btn animated-btn" id="saveEventBtn">Guardar Evento</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar integrante -->
+    <div class="modal-overlay hidden" id="memberModalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="memberModalTitle">Nuevo Integrante</h3>
+                <button class="close-modal animated-btn" id="closeMemberModal">✕</button>
+            </div>
+            <div class="modal-content">
+                <input type="text" id="memberName" placeholder="Nombre" class="input-field animated-input">
+                <input type="text" id="memberRole" placeholder="Rol" class="input-field animated-input">
+                <input type="hidden" id="editMemberId">
+            </div>
+            <div class="modal-footer">
+                <button class="save-btn animated-btn" id="saveMemberBtn">Guardar Integrante</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para editar evento existente -->
+    <div class="modal-overlay hidden" id="editEventModalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Editar Evento</h3>
+                <button class="close-modal animated-btn" id="closeEditEventModal">✕</button>
+            </div>
+            <div class="modal-content">
+                <input type="text" id="editEventName" placeholder="Nombre del evento" class="input-field animated-input">
+                <input type="date" id="editEventDate" class="input-field animated-input">
+                <div class="members-checkbox">
+                    <h4>Asistencia:</h4>
+                    <div id="editAttendanceCheckboxes"></div>
+                </div>
+                <input type="hidden" id="editEventId">
+            </div>
+            <div class="modal-footer">
+                <button class="save-btn animated-btn" id="updateEventBtn">Actualizar Evento</button>
+                <button class="delete-btn animated-btn" id="deleteEventBtn">Eliminar Evento</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tutorial Overlay -->
+    <div class="tutorial-overlay hidden" id="tutorialOverlay">
+        <div class="tutorial-card" id="tutorialCard">
+            <div class="tutorial-content" id="tutorialContent">
+                <!-- El contenido del tutorial se generará dinámicamente -->
+            </div>
+            <div class="tutorial-footer">
+                <button class="tutorial-next-btn animated-btn" id="nextTutorial">OK, ¡Entendido! 👌</button>
+                <div class="tutorial-progress">
+                    <span id="currentStep">1</span> / <span id="totalSteps">5</span>
+                </div>
+                <button class="tutorial-skip-btn" id="skipTutorial">Saltar Tutorial</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Elementos para animaciones especiales -->
+    <div class="confetti-container" id="confettiContainer"></div>
+    <div class="sparkle" id="sparkle"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
