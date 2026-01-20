@@ -1,31 +1,38 @@
-const CACHE_NAME = 'event-manager-kpop-v1';
+const CACHE_NAME = 'event-manager-kpop-v2';
 const urlsToCache = [
-    './',
-    './index.html',
-    './styles.css',
-    './app.js',
-    './manifest.json',
-    './icon-32x32.png',
-    './icon-192x192.png',
-    './icon-512x512.png'
+    '/',
+    '/index.html',
+    '/styles.css',
+    '/app.js',
+    '/manifest.json',
+    '/icon-32x32.png',
+    '/icon-192x192.png',
+    '/icon-512x512.png'
 ];
 
-// Install Service Worker
+// Instalar Service Worker
 self.addEventListener('install', event => {
     console.log('[Service Worker] Instalando...');
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
-                console.log('[Service Worker] Cacheando archivos');
-                return cache.addAll(urlsToCache);
+                console.log('[Service Worker] Cacheando archivos esenciales');
+                return cache.addAll(urlsToCache)
+                    .then(() => {
+                        console.log('[Service Worker] Todos los recursos han sido cacheados');
+                        return self.skipWaiting();
+                    })
+                    .catch(error => {
+                        console.log('[Service Worker] Error al cachear:', error);
+                    });
             })
-            .then(() => self.skipWaiting())
     );
 });
 
-// Activate Service Worker
+// Activar Service Worker
 self.addEventListener('activate', event => {
     console.log('[Service Worker] Activando...');
+    // Limpiar caches antiguos
     event.waitUntil(
         caches.keys().then(cacheNames => {
             return Promise.all(
@@ -36,54 +43,58 @@ self.addEventListener('activate', event => {
                     }
                 })
             );
+        }).then(() => {
+            console.log('[Service Worker] Ahora está activo!');
+            return self.clients.claim();
         })
     );
-    return self.clients.claim();
 });
 
-// Fetch Strategy: Cache First, then Network
+// Interceptar solicitudes
 self.addEventListener('fetch', event => {
-    // Solo cachear solicitudes GET
+    // Solo manejar solicitudes GET
     if (event.request.method !== 'GET') return;
-    
+
     event.respondWith(
         caches.match(event.request)
             .then(cachedResponse => {
-                // Return cached version if available
+                // Si hay respuesta en cache, devolverla
                 if (cachedResponse) {
+                    console.log('[Service Worker] Sirviendo desde cache:', event.request.url);
                     return cachedResponse;
                 }
-                
-                // Clone the request
-                const fetchRequest = event.request.clone();
-                
-                // Make network request
-                return fetch(fetchRequest).then(response => {
-                    // Check if valid response
-                    if (!response || response.status !== 200 || response.type !== 'basic') {
-                        return response;
-                    }
-                    
-                    // Clone the response
-                    const responseToCache = response.clone();
-                    
-                    // Cache the new response
-                    caches.open(CACHE_NAME)
-                        .then(cache => {
-                            cache.put(event.request, responseToCache);
-                        });
-                    
-                    return response;
-                })
-                .catch(error => {
-                    console.log('[Service Worker] Fetch failed:', error);
-                    // Puedes devolver una página offline aquí si lo deseas
-                });
+
+                // Si no está en cache, hacer la solicitud a la red
+                console.log('[Service Worker] Haciendo fetch a la red:', event.request.url);
+                return fetch(event.request)
+                    .then(networkResponse => {
+                        // Verificar si la respuesta es válida
+                        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+                            return networkResponse;
+                        }
+
+                        // Clonar la respuesta
+                        const responseToCache = networkResponse.clone();
+
+                        // Agregar al cache
+                        caches.open(CACHE_NAME)
+                            .then(cache => {
+                                cache.put(event.request, responseToCache);
+                                console.log('[Service Worker] Cacheado nuevo recurso:', event.request.url);
+                            });
+
+                        return networkResponse;
+                    })
+                    .catch(error => {
+                        console.log('[Service Worker] Fetch falló:', error);
+                        // Podrías devolver una página offline personalizada aquí
+                        // Por ejemplo: return caches.match('/offline.html');
+                    });
             })
     );
 });
 
-// Manejar mensajes del cliente
+// Manejar mensajes
 self.addEventListener('message', event => {
     if (event.data && event.data.type === 'SKIP_WAITING') {
         self.skipWaiting();
