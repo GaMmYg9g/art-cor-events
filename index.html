@@ -7,21 +7,21 @@
     <meta name="description" content="App para gestión de eventos y asistencia de integrantes">
     <meta name="theme-color" content="#ff5a8c">
     
-    <!-- PWA Manifest - RUTA ABSOLUTA -->
-    <link rel="manifest" href="/artcor-events/manifest.json">
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
     
     <!-- iOS Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ArtCor Events">
     
-    <!-- Iconos - RUTAS ABSOLUTAS -->
-    <link rel="icon" href="/artcor-events/icon-192x192.png" type="image/png">
-    <link rel="apple-touch-icon" href="/artcor-events/icon-192x192.png">
+    <!-- Iconos -->
+    <link rel="icon" href="icon-192x192.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
     
-    <!-- Estilos - RUTA ABSOLUTA -->
-    <link rel="stylesheet" href="/artcor-events/style.css">
-    <link rel="manifest" href="/artcor-events/manifest.json?v=2">
+    <!-- Estilos -->
+    <link rel="stylesheet" href="style.css">
+    
     <!-- Fuentes -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
@@ -30,8 +30,8 @@
         // Registrar Service Worker cuando la página cargue
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/artcor-events/sw.js', {
-                    scope: '/artcor-events/'
+                navigator.serviceWorker.register('sw.js', {
+                    scope: './'
                 }).then(function(registration) {
                     console.log('ServiceWorker registrado exitosamente con scope: ', registration.scope);
                     
@@ -226,10 +226,9 @@
         </div>
     </div>
     
-    <!-- Scripts - RUTA ABSOLUTA -->
-    <script src="/artcor-events/app.js"></script>
+    <!-- Scripts -->
+    <script src="app.js"></script>
     
-    <!-- Script para detección de PWA instalada -->
     <script>
         // Detectar si la PWA está instalada
         window.addEventListener('DOMContentLoaded', function() {
@@ -239,31 +238,12 @@
             }
             
             // Verificar que estamos en la ruta correcta
-            if (!window.location.pathname.includes('artcor-events')) {
-                console.warn('La PWA no está en la ruta correcta. Redirigiendo...');
+            const currentPath = window.location.pathname;
+            if (!currentPath.includes('artcor-events')) {
+                console.warn('Redirigiendo a la ruta correcta...');
                 window.location.href = '/artcor-events/';
             }
         });
-
-
-// Forzar limpieza al cargar
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(registrations => {
-                    for(let registration of registrations) {
-                        registration.unregister();
-                    }
-                }),
-
-    
-    // Limpiar caches
-            if ('caches' in window) {
-                caches.keys().then(cacheNames => {
-                    cacheNames.forEach(cacheName => {
-                        caches.delete(cacheName);
-                    });
-                });
-            }
-        }
-        </script>
+    </script>
 </body>
 </html>
