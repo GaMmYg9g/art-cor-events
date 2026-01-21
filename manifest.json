@@ -1,7 +1,7 @@
 {
-  "name": "Eventos K-Pop",
-  "short_name": "K-Pop Events",
-  "description": "App para gestión de eventos y asistencia de integrantes K-Pop",
+  "name": "ArtCor Events",
+  "short_name": "ArtCor-Events",
+  "description": "App para gestión de eventos y asistencia de los miembros de ArtCor",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
