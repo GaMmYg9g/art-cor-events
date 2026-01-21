@@ -1,7 +1,7 @@
 {
   "name": "ArtCor Events",
-  "short_name": "ArtCor-Events",
-  "description": "App para gestión de eventos y asistencia de los miembros de ArtCor",
+  "short_name": "ArtCor",
+  "description": "Gestión de eventos ArtCor",
   "start_url": "/artcor-events/",
   "scope": "/artcor-events/",
   "display": "standalone",
