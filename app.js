@@ -1,29 +1,46 @@
 // Aplicación principal
-class KpopEventsApp {
+class ArtCorEventsApp {
     constructor() {
-        // Inicializar datos
+        // Inicializar datos - CORREGIDOS NOMBRES DE LOCALSTORAGE
         this.members = JSON.parse(localStorage.getItem('artcor_members')) || [];
-        
         this.events = JSON.parse(localStorage.getItem('artcor_events')) || [];
         
         this.currentEventId = null;
-        this.nextId = Math.max(...this.events.map(e => e.id), ...this.members.map(m => m.id), 0) + 1;
+        this.nextId = Math.max(
+            ...this.events.map(e => e.id || 0), 
+            ...this.members.map(m => m.id || 0), 
+            0
+        ) + 1;
         
         // Inicializar la app
         this.init();
     }
     
     init() {
-        // Registrar Service Worker
+        // Registrar Service Worker - CORREGIDA RUTA
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(registration => {
-                        console.log('Service Worker registrado con éxito:', registration);
-                    })
-                    .catch(error => {
-                        console.log('Error al registrar el Service Worker:', error);
+            navigator.serviceWorker.register('/artcor-events/sw.js', {
+                scope: '/artcor-events/'
+            })
+            .then(registration => {
+                console.log('Service Worker registrado con éxito:', registration.scope);
+                
+                // Verificar actualizaciones
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    console.log('Nueva versión del Service Worker encontrada');
+                    
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed') {
+                            if (navigator.serviceWorker.controller) {
+                                console.log('Nueva versión disponible');
+                            }
+                        }
                     });
+                });
+            })
+            .catch(error => {
+                console.log('Error al registrar el Service Worker:', error);
             });
         }
         
@@ -45,6 +62,12 @@ class KpopEventsApp {
         } else {
             document.getElementById('welcomeSection').style.display = 'none';
             document.getElementById('eventsSection').style.display = 'block';
+        }
+        
+        // Establecer fecha mínima para input date (hoy)
+        const today = new Date().toISOString().split('T')[0];
+        if (this.eventDate) {
+            this.eventDate.min = today;
         }
     }
     
@@ -124,6 +147,13 @@ class KpopEventsApp {
             if (e.target === this.membersModal) this.closeMembersModalFn();
             if (e.target === this.attendanceModal) this.closeAttendanceModalFn();
         });
+        
+        // Prevenir envío de formularios con Enter
+        this.addMemberForm.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.target.matches('button')) {
+                e.preventDefault();
+            }
+        });
     }
     
     // Funciones del menú
@@ -168,6 +198,9 @@ class KpopEventsApp {
         setTimeout(() => {
             this.eventModal.querySelector('.modal-content').style.transform = 'translateY(0)';
         }, 10);
+        
+        // Enfocar el primer campo
+        setTimeout(() => this.eventName.focus(), 50);
     }
     
     closeEventModal() {
@@ -175,15 +208,22 @@ class KpopEventsApp {
         setTimeout(() => {
             this.eventModal.classList.remove('active');
             this.currentEventId = null;
+            this.eventForm.reset();
         }, 300);
     }
     
     saveEvent(e) {
         e.preventDefault();
         
+        if (!this.eventName.value.trim()) {
+            this.showNotification('Por favor ingresa un nombre para el evento');
+            this.eventName.focus();
+            return;
+        }
+        
         const eventData = {
             id: this.currentEventId || this.nextId++,
-            name: this.eventName.value,
+            name: this.eventName.value.trim(),
             date: this.eventDate.value,
             attendees: []
         };
@@ -213,7 +253,7 @@ class KpopEventsApp {
         document.getElementById('eventsSection').style.display = 'block';
         
         // Mostrar notificación de éxito
-        this.showNotification('Evento guardado exitosamente');
+        this.showNotification(eventData.name + ' guardado exitosamente');
     }
     
     editEvent(eventId) {
@@ -243,9 +283,15 @@ class KpopEventsApp {
         this.membersChecklist.innerHTML = '';
         this.membersList.innerHTML = '';
         
+        if (this.members.length === 0) {
+            this.membersChecklist.innerHTML = '<p class="no-members">No hay miembros registrados</p>';
+            this.membersList.innerHTML = '<p class="no-members">No hay miembros registrados</p>';
+            return;
+        }
+        
         this.members.forEach(member => {
             // Checklist para eventos
-            const checkItem = document.createElement('div');
+            const checkItem = document.createElement('label');
             checkItem.className = 'member-check';
             checkItem.innerHTML = `
                 <input type="checkbox" id="member_${member.id}" value="${member.id}">
@@ -265,27 +311,29 @@ class KpopEventsApp {
                     <p>${member.role}</p>
                 </div>
                 <div class="member-actions">
-                    <button class="edit-member" data-id="${member.id}">✏️</button>
-                    <button class="delete-member" data-id="${member.id}">🗑️</button>
+                    <button class="edit-member" data-id="${member.id}" title="Editar">✏️</button>
+                    <button class="delete-member" data-id="${member.id}" title="Eliminar">🗑️</button>
                 </div>
             `;
             this.membersList.appendChild(listItem);
         });
         
         // Agregar event listeners a los botones de miembros
-        document.querySelectorAll('.edit-member').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const memberId = parseInt(e.target.closest('button').dataset.id);
-                this.editMember(memberId);
+        setTimeout(() => {
+            document.querySelectorAll('.edit-member').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const memberId = parseInt(e.target.closest('button').dataset.id);
+                    this.editMember(memberId);
+                });
             });
-        });
-        
-        document.querySelectorAll('.delete-member').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const memberId = parseInt(e.target.closest('button').dataset.id);
-                this.deleteMember(memberId);
+            
+            document.querySelectorAll('.delete-member').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const memberId = parseInt(e.target.closest('button').dataset.id);
+                    this.deleteMember(memberId);
+                });
             });
-        });
+        }, 100);
     }
     
     renderMembersChecklist(attendees) {
@@ -303,22 +351,41 @@ class KpopEventsApp {
         setTimeout(() => {
             this.membersModal.querySelector('.modal-content').style.transform = 'translateY(0)';
         }, 10);
+        
+        // Enfocar el primer campo
+        setTimeout(() => this.memberName.focus(), 50);
     }
     
     closeMembersModalFn() {
         this.membersModal.querySelector('.modal-content').style.transform = 'translateY(20px)';
         setTimeout(() => {
             this.membersModal.classList.remove('active');
+            this.addMemberForm.reset();
         }, 300);
     }
     
     addMember(e) {
         e.preventDefault();
         
+        const name = this.memberName.value.trim();
+        const role = this.memberRole.value.trim();
+        
+        if (!name || !role) {
+            this.showNotification('Por favor completa ambos campos');
+            return;
+        }
+        
+        // Verificar si ya existe un miembro con ese nombre
+        if (this.members.some(m => m.name.toLowerCase() === name.toLowerCase())) {
+            this.showNotification('Ya existe un miembro con ese nombre');
+            this.memberName.focus();
+            return;
+        }
+        
         const memberData = {
             id: this.nextId++,
-            name: this.memberName.value,
-            role: this.memberRole.value
+            name: name,
+            role: role
         };
         
         this.members.push(memberData);
@@ -326,10 +393,12 @@ class KpopEventsApp {
         this.renderMembers();
         
         // Limpiar formulario
-        this.memberName.value = '';
-        this.memberRole.value = '';
+        this.addMemberForm.reset();
         
-        this.showNotification('Integrante agregado');
+        // Enfocar de nuevo en el nombre
+        this.memberName.focus();
+        
+        this.showNotification(name + ' agregado como ' + role);
     }
     
     editMember(memberId) {
@@ -337,11 +406,11 @@ class KpopEventsApp {
         if (!member) return;
         
         const newName = prompt('Nuevo nombre:', member.name);
-        if (newName !== null) {
+        if (newName !== null && newName.trim() !== '') {
             const newRole = prompt('Nuevo rol:', member.role);
-            if (newRole !== null) {
-                member.name = newName;
-                member.role = newRole;
+            if (newRole !== null && newRole.trim() !== '') {
+                member.name = newName.trim();
+                member.role = newRole.trim();
                 this.saveToLocalStorage();
                 this.renderMembers();
                 this.showNotification('Integrante actualizado');
@@ -350,27 +419,36 @@ class KpopEventsApp {
     }
     
     deleteMember(memberId) {
-        if (confirm('¿Estás seguro de que quieres eliminar este integrante?')) {
-            // Verificar si el miembro está en algún evento
-            const isInEvent = this.events.some(event => 
-                event.attendees.includes(memberId)
-            );
-            
-            if (isInEvent) {
-                alert('No se puede eliminar este integrante porque está registrado en uno o más eventos. Primero elimínalo de los eventos correspondientes.');
-                return;
-            }
-            
+        const member = this.members.find(m => m.id === memberId);
+        if (!member) return;
+        
+        // Verificar si el miembro está en algún evento
+        const eventsWithMember = this.events.filter(event => 
+            event.attendees.includes(memberId)
+        );
+        
+        if (eventsWithMember.length > 0) {
+            const eventNames = eventsWithMember.map(e => e.name).join(', ');
+            alert(`No se puede eliminar "${member.name}" porque está registrado en los siguientes eventos:\n\n${eventNames}\n\nPrimero elimínalo de los eventos correspondientes.`);
+            return;
+        }
+        
+        if (confirm(`¿Estás seguro de que quieres eliminar a "${member.name}"?`)) {
             this.members = this.members.filter(m => m.id !== memberId);
             this.saveToLocalStorage();
             this.renderMembers();
-            this.showNotification('Integrante eliminado');
+            this.showNotification(member.name + ' eliminado');
         }
     }
     
     // Funciones para eventos y listado
     renderEvents() {
         this.eventsList.innerHTML = '';
+        
+        if (this.events.length === 0) {
+            this.eventsList.innerHTML = '<p class="no-events">No hay eventos registrados</p>';
+            return;
+        }
         
         // Ordenar eventos por fecha (más recientes primero)
         const sortedEvents = [...this.events].sort((a, b) => 
@@ -398,13 +476,16 @@ class KpopEventsApp {
                 <h3>${event.name}</h3>
                 <div class="event-date">${formattedDate}</div>
                 <div class="event-members">
-                    ${attendeeNames.map(name => 
-                        `<span class="member-tag">${name}</span>`
-                    ).join('')}
+                    ${attendeeNames.length > 0 ? 
+                        attendeeNames.map(name => 
+                            `<span class="member-tag">${name}</span>`
+                        ).join('') : 
+                        '<span class="no-attendees">Sin asistentes registrados</span>'
+                    }
                 </div>
                 <div class="event-actions">
-                    <button class="edit-event" data-id="${event.id}">✏️</button>
-                    <button class="delete-event" data-id="${event.id}">🗑️</button>
+                    <button class="edit-event" data-id="${event.id}" title="Editar">✏️</button>
+                    <button class="delete-event" data-id="${event.id}" title="Eliminar">🗑️</button>
                 </div>
             `;
             
@@ -412,23 +493,30 @@ class KpopEventsApp {
         });
         
         // Agregar event listeners a los botones de eventos
-        document.querySelectorAll('.edit-event').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const eventId = parseInt(e.target.closest('button').dataset.id);
-                this.editEvent(eventId);
+        setTimeout(() => {
+            document.querySelectorAll('.edit-event').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const eventId = parseInt(e.target.closest('button').dataset.id);
+                    this.editEvent(eventId);
+                });
             });
-        });
-        
-        document.querySelectorAll('.delete-event').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const eventId = parseInt(e.target.closest('button').dataset.id);
-                this.deleteEvent(eventId);
+            
+            document.querySelectorAll('.delete-event').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const eventId = parseInt(e.target.closest('button').dataset.id);
+                    this.deleteEvent(eventId);
+                });
             });
-        });
+        }, 100);
     }
     
     renderEventTree() {
         this.eventTree.innerHTML = '';
+        
+        if (this.events.length === 0) {
+            this.eventTree.innerHTML = '<p class="no-events-tree">No hay eventos para mostrar</p>';
+            return;
+        }
         
         // Organizar eventos por año, mes y día
         const eventsByYear = {};
@@ -447,14 +535,14 @@ class KpopEventsApp {
             
             if (!eventsByYear[year][month]) {
                 eventsByYear[year][month] = {
-                    name: monthName,
+                    name: monthName.charAt(0).toUpperCase() + monthName.slice(1),
                     days: {}
                 };
             }
             
             if (!eventsByYear[year][month].days[day]) {
                 eventsByYear[year][month].days[day] = {
-                    name: `${dayName} ${day}`,
+                    name: `${dayName.charAt(0).toUpperCase() + dayName.slice(1)} ${day}`,
                     events: []
                 };
             }
@@ -476,10 +564,13 @@ class KpopEventsApp {
             
             const yearMonths = yearGroup.querySelector('.year-months');
             
-            // Ordenar meses
+            // Ordenar meses (de más reciente a más antiguo)
             const sortedMonths = Object.entries(months)
                 .sort((a, b) => b[0] - a[0])
-                .map(([monthIndex, monthData]) => ({ monthIndex: parseInt(monthIndex), ...monthData }));
+                .map(([monthIndex, monthData]) => ({ 
+                    monthIndex: parseInt(monthIndex), 
+                    ...monthData 
+                }));
             
             sortedMonths.forEach(monthData => {
                 const monthGroup = document.createElement('div');
@@ -494,10 +585,13 @@ class KpopEventsApp {
                 
                 const monthDays = monthGroup.querySelector('.month-days');
                 
-                // Ordenar días
+                // Ordenar días (de más reciente a más antiguo)
                 const sortedDays = Object.entries(monthData.days)
                     .sort((a, b) => b[0] - a[0])
-                    .map(([dayIndex, dayData]) => ({ dayIndex: parseInt(dayIndex), ...dayData }));
+                    .map(([dayIndex, dayData]) => ({ 
+                        dayIndex: parseInt(dayIndex), 
+                        ...dayData 
+                    }));
                 
                 sortedDays.forEach(dayData => {
                     const dayEvents = document.createElement('div');
@@ -517,13 +611,20 @@ class KpopEventsApp {
                         dayEvents.appendChild(dayEvent);
                     });
                     
-                    const monthHeader = monthGroup.querySelector('.month-header');
-                    monthHeader.addEventListener('click', () => {
+                    const dayHeader = document.createElement('div');
+                    dayHeader.className = 'day-header';
+                    dayHeader.innerHTML = `
+                        <span>${dayData.name}</span>
+                        <span>▼</span>
+                    `;
+                    
+                    dayHeader.addEventListener('click', () => {
                         dayEvents.classList.toggle('expanded');
-                        const arrow = monthHeader.querySelector('span:last-child');
+                        const arrow = dayHeader.querySelector('span:last-child');
                         arrow.textContent = dayEvents.classList.contains('expanded') ? '▲' : '▼';
                     });
                     
+                    monthDays.appendChild(dayHeader);
                     monthDays.appendChild(dayEvents);
                 });
                 
@@ -532,6 +633,20 @@ class KpopEventsApp {
                     monthGroup.classList.toggle('expanded');
                     const arrow = yearHeader.querySelector('span:last-child');
                     arrow.textContent = monthGroup.classList.contains('expanded') ? '▲' : '▼';
+                });
+                
+                const monthHeader = monthGroup.querySelector('.month-header');
+                monthHeader.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const dayElements = monthGroup.querySelectorAll('.day-events');
+                    dayElements.forEach(day => {
+                        day.classList.toggle('expanded');
+                    });
+                    const arrow = monthHeader.querySelector('span:last-child');
+                    const allExpanded = Array.from(dayElements).every(day => 
+                        day.classList.contains('expanded')
+                    );
+                    arrow.textContent = allExpanded ? '▲' : '▼';
                 });
                 
                 yearMonths.appendChild(monthGroup);
@@ -574,16 +689,40 @@ class KpopEventsApp {
     renderAttendanceStats(filter) {
         this.statsContent.innerHTML = '';
         
+        if (this.members.length === 0) {
+            this.statsContent.innerHTML = '<p class="no-stats">No hay miembros registrados</p>';
+            return;
+        }
+        
+        if (this.events.length === 0) {
+            this.statsContent.innerHTML = '<p class="no-stats">No hay eventos para calcular estadísticas</p>';
+            return;
+        }
+        
         // Calcular estadísticas para cada miembro
         this.members.forEach(member => {
             const memberStats = this.calculateMemberStats(member.id, filter);
             
             const statCard = document.createElement('div');
             statCard.className = 'member-stats';
+            
+            // Determinar color según porcentaje
+            let percentageClass = 'percentage-low';
+            if (memberStats.percentage >= 75) percentageClass = 'percentage-high';
+            else if (memberStats.percentage >= 50) percentageClass = 'percentage-medium';
+            
             statCard.innerHTML = `
                 <div class="member-stats-header">
-                    <div class="member-stats-name">${member.name} - ${member.role}</div>
-                    <div class="attendance-percentage">${memberStats.percentage}%</div>
+                    <div class="member-stats-name">
+                        <strong>${member.name}</strong>
+                        <small>${member.role}</small>
+                    </div>
+                    <div class="attendance-percentage ${percentageClass}">
+                        ${memberStats.percentage}%
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${memberStats.percentage}%"></div>
                 </div>
                 <div class="attendance-details">
                     ${memberStats.details}
@@ -596,9 +735,11 @@ class KpopEventsApp {
     
     calculateMemberStats(memberId, filter) {
         let relevantEvents = [];
+        let periodText = '';
         
         if (filter === 'all') {
             relevantEvents = this.events;
+            periodText = 'totales';
         } else if (filter === 'year') {
             // Último año
             const oneYearAgo = new Date();
@@ -606,6 +747,7 @@ class KpopEventsApp {
             relevantEvents = this.events.filter(event => 
                 new Date(event.date) >= oneYearAgo
             );
+            periodText = 'en el último año';
         } else if (filter === 'month') {
             // Último mes
             const oneMonthAgo = new Date();
@@ -613,6 +755,7 @@ class KpopEventsApp {
             relevantEvents = this.events.filter(event => 
                 new Date(event.date) >= oneMonthAgo
             );
+            periodText = 'en el último mes';
         }
         
         const totalEvents = relevantEvents.length;
@@ -623,22 +766,17 @@ class KpopEventsApp {
         const percentage = totalEvents > 0 ? 
             Math.round((attendedEvents / totalEvents) * 100) : 0;
         
-        let details = '';
-        if (filter === 'all') {
-            details = `Asistió a ${attendedEvents} de ${totalEvents} eventos totales`;
-        } else if (filter === 'year') {
-            details = `Asistió a ${attendedEvents} de ${totalEvents} eventos en el último año`;
-        } else if (filter === 'month') {
-            details = `Asistió a ${attendedEvents} de ${totalEvents} eventos en el último mes`;
-        }
+        const details = totalEvents > 0 ? 
+            `Asistió a ${attendedEvents} de ${totalEvents} eventos ${periodText}` :
+            `No hay eventos ${periodText}`;
         
         return { percentage, details };
     }
     
     // Funciones de utilidad
     saveToLocalStorage() {
-        localStorage.setItem('kpop_members', JSON.stringify(this.members));
-        localStorage.setItem('kpop_events', JSON.stringify(this.events));
+        localStorage.setItem('artcor_members', JSON.stringify(this.members));
+        localStorage.setItem('artcor_events', JSON.stringify(this.events));
     }
     
     showNotification(message) {
@@ -658,6 +796,8 @@ class KpopEventsApp {
             z-index: 3000;
             transform: translateX(150%);
             transition: transform 0.3s ease-out;
+            max-width: 300px;
+            word-break: break-word;
         `;
         
         document.body.appendChild(notification);
@@ -671,27 +811,73 @@ class KpopEventsApp {
         setTimeout(() => {
             notification.style.transform = 'translateX(150%)';
             setTimeout(() => {
-                document.body.removeChild(notification);
+                if (notification.parentNode) {
+                    document.body.removeChild(notification);
+                }
             }, 300);
         }, 3000);
-    }
-    
-    exitApplication() {
-        if (confirm('¿Estás seguro de que quieres salir de la aplicación?')) {
-            // En una PWA real, podrías cerrar la ventana
-            // window.close(); // Solo funciona si la ventana fue abierta por script
-            
-            // Alternativa: Redirigir o mostrar mensaje
-            alert('Gracias por usar Eventos K-Pop. La aplicación se cerrará.');
-            
-            // En dispositivos móviles, no podemos cerrar la app programáticamente
-            // pero podemos minimizarla o mostrar un mensaje
-            this.toggleMenu();
-        }
     }
 }
 
 // Inicializar la aplicación cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
-    new KpopEventsApp();
+    // Verificar si estamos en la ruta correcta de GitHub Pages
+    if (!window.location.pathname.includes('artcor-events')) {
+        console.log('Redirigiendo a la ruta correcta de la PWA...');
+        window.location.href = '/artcor-events/';
+        return;
+    }
+    
+    window.app = new ArtCorEventsApp();
+    
+    // Agregar estilos CSS para los elementos dinámicos
+    const dynamicStyles = document.createElement('style');
+    dynamicStyles.textContent = `
+        .no-members, .no-events, .no-stats, .no-events-tree {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .notification {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+        }
+        
+        .percentage-high { color: #4CAF50; }
+        .percentage-medium { color: #FF9800; }
+        .percentage-low { color: #F44336; }
+        
+        .progress-bar {
+            height: 6px;
+            background: #eee;
+            border-radius: 3px;
+            margin: 0.5rem 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff5a8c, #ff8fab);
+            transition: width 0.5s ease;
+        }
+        
+        .no-attendees {
+            color: #999;
+            font-style: italic;
+        }
+    `;
+    document.head.appendChild(dynamicStyles);
 });
+
+// Manejar recarga de la PWA
+if ('serviceWorker' in navigator) {
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+        }
+    });
+}
