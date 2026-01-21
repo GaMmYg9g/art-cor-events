@@ -1,5 +1,5 @@
 // Nombre de la caché - versión específica
-const CACHE_NAME = 'artcor-events-v2.0.1';
+const CACHE_NAME = 'artcor-events-v2.0.2';
 const STATIC_CACHE = 'static-artcor-v1';
 
 // Archivos a cachear - rutas ABSOLUTAS para GitHub Pages
@@ -9,8 +9,8 @@ const urlsToCache = [
   '/artcor-events/style.css',
   '/artcor-events/app.js',
   '/artcor-events/manifest.json',
-  '/icon-144x144.png',
-  '/icon-192x192.png',
+  '/artcor-events/icon-144x144.png',
+  '/artcor-events/icon-192x192.png',
   '/artcor-events/sw.js'
 ];
 
