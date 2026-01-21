@@ -2,9 +2,9 @@
 class KpopEventsApp {
     constructor() {
         // Inicializar datos
-        this.members = JSON.parse(localStorage.getItem('kpop_members')) || [];
+        this.members = JSON.parse(localStorage.getItem('artcor_members')) || [];
         
-        this.events = JSON.parse(localStorage.getItem('kpop_events')) || [];
+        this.events = JSON.parse(localStorage.getItem('artcor_events')) || [];
         
         this.currentEventId = null;
         this.nextId = Math.max(...this.events.map(e => e.id), ...this.members.map(m => m.id), 0) + 1;
@@ -81,7 +81,6 @@ class KpopEventsApp {
         // Botones del menú
         this.manageMembers = document.getElementById('manageMembers');
         this.viewAttendance = document.getElementById('viewAttendance');
-        this.exitApp = document.getElementById('exitApp');
         
         // Campos de formulario
         this.eventName = document.getElementById('eventName');
@@ -113,10 +112,7 @@ class KpopEventsApp {
         // Asistencia
         this.viewAttendance.addEventListener('click', () => this.openAttendanceModal());
         this.closeAttendanceModal.addEventListener('click', () => this.closeAttendanceModalFn());
-        
-        // Salir de la app
-        this.exitApp.addEventListener('click', () => this.exitApplication());
-        
+       
         // Filtros de estadísticas
         this.filterButtons.forEach(btn => {
             btn.addEventListener('click', (e) => this.filterStats(e));
